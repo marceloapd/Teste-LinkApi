@@ -1,0 +1,7 @@
+{
+    "PORT": 3000,
+    "PIPEDRIVE": {
+        "api_token": "ea065fe35aaa8daaba4c6be8fa1539bb0492510b",
+        "base_url": "https://api.pipedrive.com/v1/"
+    }
+}
