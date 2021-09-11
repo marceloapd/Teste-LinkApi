@@ -20,43 +20,81 @@ async function getProducts(id){
 }
 
 async function saveBling(objeto){
-  const business = await Business.create(createObj(objeto.data))
+  let obj = await createObj(objeto.data)
+  console.log(obj)
+  let filterObj = obj.filter(item =>{
+    if(!Object.keys(item).length){
+      return
+    }
+    return item
+  })
+  console.log(filterObj)
+  const business = await Business.create(filterObj)
   return business;
 }
 
-function createObj(objeto){
-    let result = []
-    let resultA = ''
-    let resultB = ''
-    let valorTotal = 0
-    objeto.retorno.pedidos.every((element, index)=>{
-      let posicao = index+1
-      if(posicao>=objeto.retorno.pedidos.length){
-        return false
-      }else{
-        if(element.pedido.data == objeto.retorno.pedidos[posicao].pedido.data){
-          valorTotal += parseInt(element.pedido.totalvenda) + parseInt(objeto.retorno.pedidos[posicao].pedido.totalvenda)
-          resultA = {
-            "data": element.pedido.data,
-            "valorTotal": valorTotal
-          }
-        }
-        else{
-          resultB = {
-              "data": element.pedido.data,
-              "valorTotal": parseInt(element.pedido.totalvenda)
-            }
-          }
-          return true
-        }
-      })
-    
-    result.push(resultA, resultB)
 
-    return result
+function getDatas(objeto){
+  let dateList = []
+  objeto.retorno.pedidos.forEach(element => {
+    dateList.push(element.pedido.data)
+  });
+
+  let uniqueDate = [... new Set(dateList)]
+
+  return uniqueDate
 }
 
+async function createObj(objeto){
+  const blacklist = await validate(objeto)
+  let result = []
+  let resultA = ''
+  let resultB = ''
+  let valorTotal = 0
+  objeto.retorno.pedidos.forEach((element, index)=>{
+    let posicao = index+1
+    if(blacklist.includes(element.pedido.data)){
+      return false
+    }
+    if(posicao>=objeto.retorno.pedidos.length){
+      return false
+    }else{
+      if(element.pedido.data == objeto.retorno.pedidos[posicao].pedido.data){
+        valorTotal += parseInt(element.pedido.totalvenda) + parseInt(objeto.retorno.pedidos[posicao].pedido.totalvenda)
+        resultA = {
+          "data": element.pedido.data,
+          "valorTotal": valorTotal
+        }
+      }
+      else{
+        resultB = {
+            "data": element.pedido.data,
+            "valorTotal": parseInt(element.pedido.totalvenda)
+          }
+        }
+        return true
+      }
+    })
 
+    result.push(resultA, resultB)
+    
+  return result
+}
+
+async function validate(objeto){
+
+  let blackList = []
+  let objData = getDatas(objeto)
+  let allBling = await Business.find({})
+
+  allBling.forEach(element => {
+    let date = element.data.toISOString().split('T')[0]
+    if(objData.includes(date)){
+      blackList.push(date)
+    }
+  });
+  return [... blackList]
+}
 
 module.exports = {
   async seedBling(){
@@ -64,34 +102,32 @@ module.exports = {
     const pipedriveDeals = await axios.pipeDrive.get('deals?status=won')
     const deals = pipedriveDeals.data
     var result = []
-    
-      for(let element of deals.data){
-          let json = {
-            "pedido": {
-              "cliente": {
-              "nome": {
-                  "_text": element.person_id.name
-              },
-              "fone": {
-                  "_text": element.person_id.phone[0].value
-              }
-              },
-              "itens": {
-                  "item": await getProducts(element.id)
-              }
-            }
+    for(let element of deals.data){
+      let json = {
+        "pedido": {
+          "cliente": {
+          "nome": {
+              "_text": element.person_id.name
+          },
+          "fone": {
+              "_text": element.person_id.phone[0].value
           }
-          let xml = convert.json2xml(json, {compact: true, ignoreComment: false, spaces: 4})
-          let blingPedidos = await axios.bling.post(`pedido/json/?xml=${encodeURI(xml)}`)
-          result.push(blingPedidos.data)
+          },
+          "itens": {
+              "item": await getProducts(element.id)
+          }
+        }
       }
+      let xml = convert.json2xml(json, {compact: true, ignoreComment: false, spaces: 4})
+      let blingPedidos = await axios.bling.post(`pedido/json/?xml=${encodeURI(xml)}`)
+      result.push(blingPedidos.data)
+    }
       saveBling(objeto)
       return result
   },
 
   async getAllBling(){
     let allBling = await Business.find({})
-    console.log(allBling)
     return allBling
   }
 } 
