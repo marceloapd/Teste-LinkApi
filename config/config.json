@@ -2,6 +2,10 @@
     "PORT": 3000,
     "PIPEDRIVE": {
         "api_token": "ea065fe35aaa8daaba4c6be8fa1539bb0492510b",
-        "base_url": "https://api.pipedrive.com/v1/"
+        "base_url": "https://api.pipedrive.com/v1"
+    },
+    "BLING": {
+        "api_token": "fcf878ac3ba9524abb5ab2c371fcc62bec3c13a72ad63d92ab967aee7c07018613aa9c05",
+        "base_url": "https://bling.com.br/Api/v2"
     }
 }
