@@ -1,4 +1,22 @@
 const axios = require('./axios')
+const convert = require('xml-js')
+
+async function getProducts(id){
+    let itens = []
+    let pipedriveProducts = await axios.pipeDrive.get(`deals/${id}/products?include_product_data=${id}`)
+    let produtos = pipedriveProducts.data
+    for (let produto of produtos.data){
+        itens.push(
+            {
+               "codigo": `${produto.product_id}`,
+               "descricao": `${produto.name}`,
+               "un": "Pç",
+               "qtde": `${produto.quantity}`,
+               "vlr_unit": `${produto.item_price}`
+            })
+    }
+    return itens
+}
 
 module.exports = {
     async seedBling(){
@@ -7,38 +25,22 @@ module.exports = {
         var result = []
 
         for(let element of deals.data){
-            let xml = `       
-            <?xml version="1.0" encoding="UTF-8"?>
-            <pedido>
-            <cliente>
-            <nome>${element.person_id.name}</nome>
-            <fone>${element.person_id.phone.value}</fone>
-            </cliente>
-            <itens>
-            <item>
-            <codigo>000</codigo>
-            <descricao>Caneta 001</descricao>
-            <un>Pç</un>
-            <qtde>10</qtde>
-            <vlr_unit>1.68</vlr_unit>
-            </item>
-            <item>
-            <codigo>000</codigo>
-            <descricao>Caderno 002</descricao>
-            <un>Un</un>
-            <qtde>3</qtde>
-            <vlr_unit>3.75</vlr_unit>
-            </item>
-            <item>
-            <codigo>000</codigo>
-            <descricao>Teclado 003</descricao>
-            <un>Cx</un>
-            <qtde>7</qtde>
-            <vlr_unit>18.65</vlr_unit>
-            </item>
-            </itens>
-            </pedido>`
-
+            let json = {
+                "pedido": {
+                    "cliente": {
+                        "nome": {
+                            "_text": element.person_id.name
+                        },
+                        "fone": {
+                            "_text": element.person_id.phone[0].value
+                        }
+                    },
+                    "itens": {
+                        "item": await getProducts(element.id)
+                    }
+                }
+            }
+            let xml = convert.json2xml(json, {compact: true, ignoreComment: false, spaces: 4})
             let blingPedidos = await axios.bling.post(`pedido/json/?xml=${encodeURI(xml)}`)
             result.push(blingPedidos.data)
         }
