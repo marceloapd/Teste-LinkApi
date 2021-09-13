@@ -21,14 +21,12 @@ async function getProducts(id){
 
 async function saveBling(objeto){
   let obj = await createObj(objeto.data)
-  console.log(obj)
   let filterObj = obj.filter(item =>{
     if(!Object.keys(item).length){
       return
     }
     return item
   })
-  console.log(filterObj)
   const business = await Business.create(filterObj)
   return business;
 }
@@ -98,23 +96,22 @@ async function validate(objeto){
 
 module.exports = {
   async seedBling(){
-    const objeto = await axios.bling.get('pedidos/json/')
     const pipedriveDeals = await axios.pipeDrive.get('deals?status=won')
     const deals = pipedriveDeals.data
-    var result = []
+    let result = []
     for(let element of deals.data){
       let json = {
         "pedido": {
           "cliente": {
-          "nome": {
+            "nome": {
               "_text": element.person_id.name
-          },
-          "fone": {
+            },
+            "fone": {
               "_text": element.person_id.phone[0].value
-          }
+            }
           },
           "itens": {
-              "item": await getProducts(element.id)
+            "item": await getProducts(element.id)
           }
         }
       }
@@ -122,8 +119,9 @@ module.exports = {
       let blingPedidos = await axios.bling.post(`pedido/json/?xml=${encodeURI(xml)}`)
       result.push(blingPedidos.data)
     }
-      saveBling(objeto)
-      return result
+    const objeto = await axios.bling.get('pedidos/json/')
+    saveBling(objeto)
+    return result
   },
 
   async getAllBling(){
