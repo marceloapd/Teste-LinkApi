@@ -43,6 +43,7 @@ Em um terminal como acesso a pasta root do projeto executamos os comandos
 ## Built With
 
 * [Express](https://expressjs.com/pt-br/)
+* [Mongoose](https://mongoosejs.com/)
 
 ## Autores
 
